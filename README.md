@@ -144,6 +144,34 @@ why the full `sonos-control` Noctalia plugin wasn't ported).
   warning simultaneously), not specifically for `sonos`. Generic hot-reload noise on this
   Omarchy version, not something this change introduced — left as-is.
 
+## Logitech mouse/keyboard battery (`.config/omarchy/bar/scripts/logitech-battery.py`)
+
+Bar widget (right section, between `omarchy.bluetooth` and `omarchy.network`) showing MX
+Master 3S mouse + MX Mechanical Mini keyboard battery, both on the same Bolt Receiver.
+
+- Installed `solaar` (`extra/solaar`) — the standard Linux tool for Logitech's HID++
+  protocol. Confirmed first that this isn't exposed any easier way: `upower -e` shows no
+  HID++ devices on this system, so there's no generic UPower/sysfs battery path to read
+  instead.
+- `solaar show` has no JSON output mode, so the script parses its plain text — matched by
+  `Kind` (`mouse`/`keyboard`) rather than device name, so a future device swap doesn't need a
+  code change. A second, currently-idle Bolt receiver lists the same two devices again as
+  `Device is offline.` — skipped; first (connected) reading per kind wins.
+- **Slow, and that shapes the polling interval:** `solaar show` has no persistent daemon to
+  query — each CLI call re-walks the full HID++ feature set live over the radio from
+  scratch. Timed live: ~6s for one device, ~14s for `all`. Bumped the script's own subprocess
+  timeout to 25s and set the bar's poll `interval` to 120s (vs. 5s for the Sonos widgets) —
+  battery level doesn't change fast enough to justify eating that cost more often.
+- Icons (`U+F037D` mouse / `U+F030C` keyboard, MDI-range Nerd Font) picked by checking actual
+  glyph coverage in the bar's font (`JetBrainsMono Nerd Font`) via `fc-query -f '%{charset}'`
+  rather than guessing codepoints from memory, after an earlier guess for the Sonos widget's
+  icons above turned out wrong and had to be corrected against `panels/audio/Panel.qml`'s
+  real glyphs.
+- `onClick` opens the full `solaar` GUI for anything needing more than the two numbers (pairing,
+  firmware, per-device settings).
+- **Verified live:** ran the script directly against the real devices — correctly parsed
+  70% discharging (mouse) and 25% recharging (keyboard) at time of writing.
+
 ## Default browser — Firefox (`.config/mimeapps.list`)
 
 Switched the default browser to Firefox via `omarchy default browser firefox`, which sets it
@@ -152,3 +180,12 @@ Tracked here as `.config/mimeapps.list` since it's the actual file that command 
 `text/html`, `http`/`https`/`about`/`unknown` scheme handlers all point to `firefox.desktop`.
 `mailto` stays on `HEY.desktop` and `claude-cli` on `claude-code-url-handler.desktop`,
 untouched by the browser switch.
+
+## Weather location — Old Alresford (`~/.local/state/omarchy/settings/weather.json`)
+
+Set via `omarchy-weather-location --set "Old Alresford" <lat>,<lon>` rather than just the
+place name, using exact coordinates resolved from the postcode (SO24 9DR → 51.104736,
+-1.160234 via `api.postcodes.io`) instead of Open-Meteo's name-based geocoding, which is
+city/town-level and may not resolve a small village precisely. Tracked here as
+`.local/state/omarchy/settings/weather.json`, outside this repo's usual `.config` mirror
+(state, not config, but still a real deliberate machine setting worth keeping a note of).

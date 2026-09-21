@@ -48,6 +48,13 @@
           "id": "omarchy.bluetooth"
         },
         {
+          "id": "logitech-battery",
+          "type": "command",
+          "exec": "~/.config/omarchy/bar/scripts/logitech-battery.py",
+          "interval": 120,
+          "onClick": "solaar"
+        },
+        {
           "id": "omarchy.network"
         },
         {

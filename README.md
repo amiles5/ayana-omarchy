@@ -71,3 +71,12 @@ retriggers `amdgpu`'s `trigger_hotplug` debugfs file and restarts PipeWire). Not
 today's fix (this was a cold-boot issue, not suspend/resume) and not yet verified as
 applicable to Omarchy's PipeWire/kernel versions — revisit if the same symptom shows up after
 a suspend/resume cycle on this install.
+
+## Default browser — Firefox (`.config/mimeapps.list`)
+
+Switched the default browser to Firefox via `omarchy default browser firefox`, which sets it
+through `xdg-settings` (Omarchy's XDG handler wrapper, not a Hyprland/shell config file).
+Tracked here as `.config/mimeapps.list` since it's the actual file that command writes to —
+`text/html`, `http`/`https`/`about`/`unknown` scheme handlers all point to `firefox.desktop`.
+`mailto` stays on `HEY.desktop` and `claude-cli` on `claude-code-url-handler.desktop`,
+untouched by the browser switch.

@@ -1,0 +1,10 @@
+[Unit]
+Description=Periodically cycle the Omarchy theme background (auto wallpaper changer)
+After=graphical-session.target
+
+[Timer]
+OnStartupSec=120s
+OnUnitActiveSec=120s
+
+[Install]
+WantedBy=graphical-session.target

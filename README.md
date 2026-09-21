@@ -4,6 +4,32 @@ Notes on `ayana`, the same physical machine documented in
 [`amiles5/ayana-cachyos`](https://github.com/amiles5/ayana-cachyos), now running a fresh
 **Omarchy 4** install (separate SSD/config, not a migration of the CachyOS dotfiles).
 
+## Auto wallpaper changer (`.config/hypr/scripts/wallpaper-cycle.sh`, systemd user timer)
+
+Ported from `ayana-cachyos`, where Noctalia's built-in `[wallpaper.automation]` cycled
+`~/Pictures/wallpapers` every `interval_seconds = 120`. This install doesn't use Noctalia, so
+it's a systemd user timer (`wallpaper-cycle.timer`, `OnUnitActiveSec=120s` - same 120s
+interval) firing `wallpaper-cycle.sh`, which sets the next wallpaper via
+`omarchy-theme-bg-set`.
+
+- **Not scoped to the current Omarchy theme.** Omarchy's own `omarchy theme bg next` only
+  cycles a theme's own `backgrounds/` folder plus a per-theme-slug overlay dir
+  (`~/.config/omarchy/backgrounds/<theme-slug>/`) — using it directly would have meant
+  symlinking `~/Pictures/wallpapers` in under the current theme slug (`tokyo-night`) and
+  redoing that on every theme switch. Instead `wallpaper-cycle.sh` reads
+  `~/Pictures/wallpapers` directly and calls `omarchy-theme-bg-set <path>` (confirmed by
+  reading its source: it accepts any image path, no theme association required), so it
+  survives a theme change with no extra step. Same find/sort/wrap-around-by-symlink logic as
+  the stock `omarchy-theme-bg-next` script, just pointed at a plain directory instead of a
+  theme's backgrounds folder.
+- `~/Pictures/wallpapers` itself (130+ images, personal, not tracked here) already existed on
+  this machine from an earlier restore — same directory path `ayana-cachyos`'s Noctalia
+  config pointed at.
+- **Verified live:** enabled the timer, then manually fired `wallpaper-cycle.service` once
+  rather than waiting out the full interval — confirmed the background symlink
+  (`~/.local/state/omarchy/current/background`) switched to an image from
+  `~/Pictures/wallpapers`.
+
 ## Audio — Apple Studio Display over Thunderbolt (2026-09-21)
 
 **Symptom:** fresh Omarchy 4 install. Studio Display video worked immediately, but no audio

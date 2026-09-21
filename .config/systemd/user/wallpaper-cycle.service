@@ -1,0 +1,7 @@
+[Unit]
+Description=Cycle to the next wallpaper from ~/Pictures/wallpapers
+After=graphical-session.target
+
+[Service]
+Type=oneshot
+ExecStart=%h/.config/hypr/scripts/wallpaper-cycle.sh

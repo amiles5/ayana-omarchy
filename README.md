@@ -4,6 +4,10 @@ Notes on `ayana`, the same physical machine documented in
 [`amiles5/ayana-cachyos`](https://github.com/amiles5/ayana-cachyos), now running a fresh
 **Omarchy 4** install (separate SSD/config, not a migration of the CachyOS dotfiles).
 
+See [`keybindings.md`](keybindings.md) for the full Hyprland keybinding table (224 bindings,
+generated live via `omarchy menu keybindings --print` — stock Omarchy defaults plus this
+machine's one override in [`.config/hypr/bindings.lua`](.config/hypr/bindings.lua)).
+
 ## Auto wallpaper changer (`.config/hypr/scripts/wallpaper-cycle.sh`, systemd user timer)
 
 Ported from `ayana-cachyos`, where Noctalia's built-in `[wallpaper.automation]` cycled

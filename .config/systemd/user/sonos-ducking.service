@@ -1,0 +1,12 @@
+[Unit]
+Description=Pause Sonos when the Studio Display's own speakers are active, resume after
+After=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=%h/.config/hypr/scripts/sonos-ducking.sh
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=graphical-session.target

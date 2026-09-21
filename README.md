@@ -72,6 +72,45 @@ today's fix (this was a cold-boot issue, not suspend/resume) and not yet verifie
 applicable to Omarchy's PipeWire/kernel versions — revisit if the same symptom shows up after
 a suspend/resume cycle on this install.
 
+## Sonos ducking (`.config/hypr/scripts/sonos-ducking.sh`, systemd user service)
+
+Ported the "auto-pause Sonos when the Studio Display's own speakers make noise" feature from
+`ayana-cachyos`'s `sonos-control` Noctalia plugin — but standalone, not the full plugin.
+That plugin (bar widget, play/pause, room grouping UI, Favourites) doesn't exist on this
+install and porting all of it wasn't in scope here; just the ducking behaviour, as its own
+script + systemd user service.
+
+- **What it does:** polls `pactl list sinks short` every 5s for the Studio Display's sink
+  going `RUNNING` (a call, a video, a notification). On the idle→running edge, pauses
+  whatever's currently playing on Sonos; on running→idle, resumes it — same logic as
+  `ayana-cachyos`'s version, down to treating `STOPPED` as resumable alongside
+  `PAUSED_PLAYBACK` (pausing a live-radio stream usually reports `STOPPED`, since most
+  streams can't be truly paused), and only resuming if nothing else changed the transport
+  while the host was making noise.
+- **Diverges from `ayana-cachyos` on grouping, and this mattered immediately:** that version
+  tracked one UI-selected "active room" against a static `ROOMS` table. This one has no UI to
+  select a room from, so it originally just paused whichever of the four known speakers
+  reported `PLAYING`. A live test (2026-09-21) showed all four are currently one Sonos group
+  coordinated by Dining — sending `Pause` straight to a non-coordinator member's own IP is
+  rejected with an HTTP 500 (Sonos/UPnP requires transport commands go to the group
+  coordinator), so 3 of 4 pause attempts silently failed. Rewrote it to call
+  `GetZoneGroupState` (ZoneGroupTopology) live on every check and resolve actual group
+  coordinators dynamically, rather than hardcoding room→coordinator relationships — this also
+  means it can't go stale the way `ayana-cachyos` did once already (a speaker got renamed in
+  the Sonos app and its hardcoded room name in `service.luau` went stale until caught and
+  fixed by hand). `BOOTSTRAP_IPS` in the script is just known-reachable speakers to query the
+  topology from — not a source of truth for names or grouping.
+- **Verified live** against the real household speakers both before and after the grouping
+  fix: broken version left 3 of 4 speakers still playing after a "duck" (500s, never actually
+  paused — but the resume-side safety check correctly declined to touch them since their
+  state was never `PAUSED_PLAYBACK`/`STOPPED`, so no incorrect action was taken either way);
+  fixed version cleanly paused the one actual coordinator (Dining) and resumed it a few
+  seconds later, no errors.
+- Enabled via `systemctl --user enable --now sonos-ducking.service`
+  (`WantedBy=graphical-session.target`, `Restart=always`), same
+  `graphical-session.target`-based user-service pattern `ayana-cachyos` uses for
+  `studio-display-tunnel-fix.service` (not itself ported here — see above).
+
 ## Default browser — Firefox (`.config/mimeapps.list`)
 
 Switched the default browser to Firefox via `omarchy default browser firefox`, which sets it

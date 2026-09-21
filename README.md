@@ -110,6 +110,39 @@ script + systemd user service.
   (`WantedBy=graphical-session.target`, `Restart=always`), same
   `graphical-session.target`-based user-service pattern `ayana-cachyos` uses for
   `studio-display-tunnel-fix.service` (not itself ported here — see above).
+- Refactored (2026-09-21) to share its SOAP/topology helpers with the bar widget below via a
+  new `.config/hypr/scripts/sonos_lib.py` module, instead of duplicating that logic —
+  `sonos-ducking.sh` now just imports it.
+
+## Sonos bar widget (`.config/omarchy/bar/scripts/sonos-{status,toggle}.py`, `shell.json`)
+
+A simple active/mute switch for the whole house's Sonos, added to the bar's right section
+(between `omarchy.network` and `omarchy.audio`) as an `omarchy.bar` `command`-type module —
+not a full QML plugin, since this is intentionally minimal (see the ducking section above for
+why the full `sonos-control` Noctalia plugin wasn't ported).
+
+- **`sonos-status.py`** — polled every 5s (`interval` in `shell.json`), prints Waybar-style
+  JSON. Shows the same volume-high/volume-mute glyphs as the built-in `omarchy.audio` widget
+  (`U+F057E`/`U+F075F`, lifted from `panels/audio/Panel.qml` for visual consistency) —
+  active/filled when any Sonos group is playing, muted-look otherwise. Tooltip names which
+  room(s) are playing.
+- **`sonos-toggle.py`** — the widget's `onClick`. A blunt house-wide switch, not a "restore
+  exactly what was playing" toggle like the ducking service: if anything's playing, pauses
+  every playing group; if nothing is, resumes every group that has something cued. Simple by
+  design, per what was asked for — no per-room UI.
+- Both share `sonos_lib.py` (`.config/hypr/scripts/`) with `sonos-ducking.sh` for group-
+  coordinator discovery and Pause/Play, rather than duplicating that logic a third time.
+- **Verified live:** ran both scripts directly against the real speakers — status correctly
+  reported "paused"/"playing" matching actual transport state, toggle flipped state cleanly
+  in both directions. Confirmed via screenshot that the bar renders the correct icon for the
+  live state, distinguishable from the adjacent `omarchy.audio` icon. `shell.json` hot-reloads
+  on save, no `omarchy restart shell` needed.
+- A `TypeError: Cannot assign to read-only property "moduleName"` appears in
+  `journalctl --user -u <the shell process>` at the moment `shell.json` reloads — but it fires
+  for every widget's `IpcHandler` re-registering on that same reload (bluetooth, network,
+  audio, monitor, power all logged the same "Handler was registered but will not be used"
+  warning simultaneously), not specifically for `sonos`. Generic hot-reload noise on this
+  Omarchy version, not something this change introduced — left as-is.
 
 ## Default browser — Firefox (`.config/mimeapps.list`)
 
